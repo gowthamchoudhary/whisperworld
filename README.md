@@ -7,7 +7,7 @@ Photograph living things in nature and hold real-time voice conversations with t
 | Layer | Technology |
 |---|---|
 | Frontend | React 18 + TypeScript + Vite, deployed to Vercel |
-| Backend | FastAPI (Python 3.12) + Uvicorn, deployed to Railway |
+| Backend | FastAPI (Python 3.11) + Uvicorn, deployed to Render |
 | Database / Auth | Supabase (PostgreSQL + PostGIS + Supabase Auth) |
 | AI Vision | Google Gemini Vision (`gemini-1.5-flash`, free tier) |
 | Voice / AI | ElevenLabs (Voice Design, Conversational AI, TTS v3, Sound Effects) |
@@ -28,7 +28,7 @@ whisperworld/
 ### Prerequisites
 
 - Node.js 18+
-- Python 3.12+
+- Python 3.11+
 - A Supabase project with PostGIS enabled
 - ElevenLabs API key
 - Google Gemini API key
@@ -89,25 +89,25 @@ Set the following environment variables in your Vercel project settings:
 |---|---|---|
 | `VITE_SUPABASE_URL` | Your Supabase project URL | `https://xxxxx.supabase.co` |
 | `VITE_SUPABASE_ANON_KEY` | Your Supabase anon/public key | `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...` |
-| `VITE_BACKEND_URL` | Railway backend URL (without trailing slash) | `https://your-app.railway.app` |
+| `VITE_BACKEND_URL` | Render backend URL (without trailing slash) | `https://your-app.onrender.com` |
 
 #### Deployment Configuration
 
 The `vercel.json` file at the repository root configures:
 - Build command: `cd frontend && npm install && npm run build`
 - Output directory: `frontend/dist`
-- API proxy: `/api/*` routes are proxied to the Railway backend
-- WebSocket proxy: `/ws/*` routes are proxied to the Railway backend
+- API proxy: `/api/*` routes are proxied to the Render backend
+- WebSocket proxy: `/ws/*` routes are proxied to the Render backend
 
-After deploying to Railway, update the `destination` URLs in `vercel.json` to point to your actual Railway backend URL.
+After deploying to Render, update the `destination` URLs in `vercel.json` to point to your actual Render backend URL.
 
-### Railway (Backend)
+### Render (Backend)
 
-The backend is deployed to Railway using Docker. Railway will automatically build the Docker image from the `backend/Dockerfile` and deploy it according to the `railway.toml` configuration at the repository root.
+The backend is deployed to Render using the `render.yaml` configuration file at the repository root. Render will automatically detect this file and deploy your backend service.
 
 #### Required Environment Variables
 
-Set the following environment secrets in your Railway service settings:
+Set the following environment variables in your Render service settings:
 
 | Variable | Description | Example |
 |---|---|---|
@@ -119,15 +119,22 @@ Set the following environment secrets in your Railway service settings:
 
 #### Deployment Configuration
 
-The `railway.toml` file at the repository root configures:
-- Docker builder using `backend/Dockerfile`
-- Start command: `uvicorn app.main:app --host 0.0.0.0 --port 8000`
-- Health check endpoint: `/health`
-- Restart policy: on failure with max 10 retries
+The `render.yaml` file at the repository root configures:
+- Python runtime with version 3.11.0
+- Root directory: `backend/`
+- Build command: `pip install -r requirements.txt`
+- Start command: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+- Environment variables (set these in Render dashboard)
 
-After deploying to Railway, copy your Railway backend URL and update:
-1. The `VITE_BACKEND_URL` environment variable in your Vercel project
-2. The `destination` URLs in `vercel.json` to point to your Railway backend
+#### Deployment Steps
+
+1. Connect your GitHub repository to Render
+2. Render will automatically detect the `render.yaml` file
+3. Set all required environment variables in the Render dashboard
+4. Deploy the service
+5. Copy your Render backend URL and update:
+   - The `VITE_BACKEND_URL` environment variable in your Vercel project
+   - The `destination` URLs in `vercel.json` to point to your Render backend
 
 ## License
 
