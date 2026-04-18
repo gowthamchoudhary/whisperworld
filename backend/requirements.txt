@@ -6,3 +6,6 @@ httpx
 websockets
 google-generativeai
 pydantic
+elevenlabs
+python-multipart
+asyncio
