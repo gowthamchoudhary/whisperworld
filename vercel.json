@@ -4,11 +4,11 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://your-railway-backend.railway.app/api/:path*"
+      "destination": "https://whisperworld-backend.onrender.com/api/:path*"
     },
     {
       "source": "/ws/:path*",
-      "destination": "https://your-railway-backend.railway.app/ws/:path*"
+      "destination": "https://whisperworld-backend.onrender.com/ws/:path*"
     }
   ],
   "headers": [
