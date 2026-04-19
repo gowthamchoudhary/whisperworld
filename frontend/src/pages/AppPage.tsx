@@ -32,7 +32,6 @@ interface CreatureProfile {
 export default function AppPage(): JSX.Element {
   const [identifications, setIdentifications] = useState<IdentificationResult[]>([]);
   const [profiles, setProfiles] = useState<CreatureProfile[]>([]);
-  const [gps, setGps] = useState<{ lat: number; lng: number } | undefined>();
   const navigate = useNavigate();
 
   const handleIdentificationComplete = (results: IdentificationResult[]): void => {
@@ -82,7 +81,6 @@ export default function AppPage(): JSX.Element {
                 <CreatureCard
                   key={index}
                   identification={identification}
-                  gps={gps}
                   onProfileLoaded={handleProfileLoaded}
                 />
               ))}

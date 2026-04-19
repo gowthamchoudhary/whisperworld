@@ -112,7 +112,11 @@ export default function CreatureCard({
   }
 
   if (!profile) {
-    return null;
+    return (
+      <div className="w-full max-w-md rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+        <p className="text-base text-gray-600">No profile data available</p>
+      </div>
+    );
   }
 
   const categoryColor = CATEGORY_COLORS[profile.category] || CATEGORY_COLORS.default;
