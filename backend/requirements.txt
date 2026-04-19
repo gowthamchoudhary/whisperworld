@@ -7,5 +7,5 @@ websockets
 google-generativeai
 pydantic
 elevenlabs
-python-multipart==0.0.9
+python-multipart
 asyncio
