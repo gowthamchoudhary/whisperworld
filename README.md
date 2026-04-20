@@ -1,141 +1,149 @@
-# WhisperWorld
+# WhisperWorld 🌿
 
-Photograph living things in nature and hold real-time voice conversations with them. WhisperWorld uses Google Gemini Vision to identify creatures, then ElevenLabs Conversational AI to give each one a unique voice and personality.
+**Talk to nature's creatures using AI!** Photograph any living thing in nature and hold real-time voice conversations with them. WhisperWorld uses Google Gemini Vision to identify creatures, then ElevenLabs Conversational AI to give each one a unique voice and personality.
 
-## Tech Stack
+## 🎯 Live Demo
+
+- **Frontend**: https://whisperworld.onrender.com
+- **Backend**: https://whisperworld-backend.onrender.com
+
+## ✨ Features
+
+- 📸 **Camera Capture**: Take photos of plants and animals
+- 🤖 **AI Identification**: Google Gemini Vision identifies creatures
+- 🗣️ **Voice Conversations**: Real-time chat using ElevenLabs ConvAI
+- 🎵 **Creature Singing**: Ask creatures to sing personalized songs
+- 📍 **GPS Memory**: Creatures remember you at specific locations
+- 🎨 **Beautiful UI**: Dark nature theme with green accents
+- 📱 **Mobile-First**: Optimized for phone screens
+
+## 🏆 ElevenLabs x Kiro Hackathon
+
+This project was built for the **ElevenLabs x Kiro Hackathon** using:
+
+### ElevenLabs APIs:
+- **Voice Design API** - Unique creature voices
+- **Conversational AI** - Real-time voice chat
+- **TTS v3** - Creature singing feature  
+- **Sound Effects API** - Ambient nature sounds
+
+### Kiro Features:
+- **Spec-driven development** - Complete requirements → design → tasks workflow
+- **Steering docs** - Development conventions and best practices
+- **Vibe coding** - Built entire full-stack app through conversation
+
+## 🚀 Quick Start
+
+### 1. Database Setup (Required First!)
+
+Go to your Supabase dashboard and run these SQL migrations in order:
+
+```sql
+-- 1. Run supabase/migrations/001_initial_schema.sql
+-- 2. Run supabase/migrations/002_rls_policies.sql  
+-- 3. Run supabase/migrations/003_retention_job.sql
+-- 4. Run supabase/migrations/004_find_nearby_profile_fn.sql
+```
+
+### 2. Environment Variables
+
+The app is already configured with API keys. Just set these in your Render dashboard:
+
+**Backend Service** (`whisperworld-backend`):
+```
+SUPABASE_URL=https://tunktgbkragjuxcfwfmg.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR1bmt0Z2JrcmFnanV4Y2Z3Zm1nIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NjUwNDA5OSwiZXhwIjoyMDkyMDgwMDk5fQ.NhK1Q-wzPh0Mg4RBVtwJ6JS4qJ_FjzJRApAnxk8K-_Y
+ELEVENLABS_API_KEY=sk_e8cbf828f8933c524dc29f4f5bf0195a97c0326852884bb7
+GEMINI_API_KEY=AIzaSyD6LhS_YX1xwlTkkS-Jp0jtMQ9hVarLgbU
+ALLOWED_ORIGINS=https://whisperworld.onrender.com
+```
+
+**Frontend Service** (`whisperworld-frontend`):
+```
+VITE_SUPABASE_URL=https://tunktgbkragjuxcfwfmg.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR1bmt0Z2JrcmFnanV4Y2Z3Zm1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1MDQwOTksImV4cCI6MjA5MjA4MDA5OX0.jp-mXHi_YKG6V2grozaekWHXq4E01gCQnqoIQ2TDSbs
+VITE_API_BASE_URL=https://whisperworld-backend.onrender.com
+```
+
+### 3. Test the App!
+
+1. Visit https://whisperworld.onrender.com
+2. Sign up for an account
+3. Take a photo of a plant or animal
+4. Chat with your creature!
+
+## 🛠️ Tech Stack
 
 | Layer | Technology |
 |---|---|
-| Frontend | React 18 + TypeScript + Vite, deployed to Vercel |
-| Backend | FastAPI (Python 3.11) + Uvicorn, deployed to Render |
-| Database / Auth | Supabase (PostgreSQL + PostGIS + Supabase Auth) |
-| AI Vision | Google Gemini Vision (`gemini-1.5-flash`, free tier) |
-| Voice / AI | ElevenLabs (Voice Design, Conversational AI, TTS v3, Sound Effects) |
+| Frontend | React 18 + TypeScript + Vite + Tailwind CSS |
+| Backend | FastAPI (Python 3.11) + Uvicorn |
+| Database | Supabase (PostgreSQL + PostGIS + Auth) |
+| AI Vision | Google Gemini Vision (free tier) |
+| Voice AI | ElevenLabs (Voice Design, ConvAI, TTS v3, Sound Effects) |
+| Deployment | Render (both frontend & backend) |
 
-## Project Structure
+## 📁 Project Structure
 
 ```
 whisperworld/
-├── frontend/          # React + Vite app
-├── backend/           # FastAPI app
-├── package.json       # Root workspace (frontend only — backend is Python)
-├── LICENSE
-└── README.md
+├── .kiro/
+│   ├── specs/whisper-world/     # Complete spec-driven development
+│   └── steering/                # Development conventions
+├── frontend/                    # React + TypeScript app
+├── backend/                     # FastAPI Python app  
+├── supabase/migrations/         # Database schema migrations
+└── render.yaml                  # Deployment configuration
 ```
 
-## Setup
+## 🎨 UI Design
 
-### Prerequisites
+- **Dark Nature Theme**: Beautiful gradients with emerald green accents
+- **Glass Effects**: Frosted glass components with subtle borders
+- **Mobile-First**: Optimized for portrait phone usage
+- **Animations**: Speaking indicators, loading states, button effects
+- **Accessibility**: 44px touch targets, proper contrast ratios
 
-- Node.js 18+
-- Python 3.11+
-- A Supabase project with PostGIS enabled
-- ElevenLabs API key
-- Google Gemini API key
+## 🔧 Development
 
-### Frontend
+### Local Setup
 
 ```bash
+# Frontend
 cd frontend
-cp .env.example .env
-# Fill in your values in .env
 npm install
 npm run dev
-```
 
-### Backend
-
-```bash
+# Backend  
 cd backend
-cp .env.example .env
-# Fill in your values in .env
 python -m venv .venv
-source .venv/bin/activate  # Windows: .venv\Scripts\activate
+source .venv/bin/activate
 pip install -r requirements.txt
-uvicorn app.main:app --reload --port 8000
+uvicorn app.main:app --reload
 ```
 
-## Environment Variables
+### Key Features Implemented
 
-### Frontend (`frontend/.env`)
+- ✅ **Camera capture** with environment camera
+- ✅ **Photo identification** via Gemini Vision API
+- ✅ **Creature profiles** with ElevenLabs Voice Design
+- ✅ **Real-time voice chat** via ElevenLabs ConvAI WebSocket
+- ✅ **Creature singing** with TTS v3
+- ✅ **Ambient sounds** during conversations
+- ✅ **GPS-based memory** for creature persistence
+- ✅ **Group conversations** with multiple creatures
+- ✅ **Mobile-optimized UI** with dark theme
 
-| Variable | Description |
-|---|---|
-| `VITE_SUPABASE_URL` | Your Supabase project URL |
-| `VITE_SUPABASE_ANON_KEY` | Your Supabase anon/public key |
-| `VITE_API_BASE_URL` | Backend API base URL (default: `http://localhost:8000`) |
+## 🏆 Hackathon Submission
 
-### Backend (`backend/.env`)
+This project demonstrates:
 
-| Variable | Description |
-|---|---|
-| `SUPABASE_URL` | Your Supabase project URL |
-| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key (keep secret) |
-| `GEMINI_API_KEY` | Google Gemini API key |
-| `ELEVENLABS_API_KEY` | ElevenLabs API key |
-| `ALLOWED_ORIGINS` | Comma-separated list of allowed CORS origins |
+- **Deep ElevenLabs Integration**: Uses 4 different ElevenLabs APIs
+- **Advanced Kiro Usage**: Spec-driven development, steering docs, vibe coding
+- **Creative Concept**: Unique nature + AI conversation experience
+- **Production Quality**: Full deployment, error handling, mobile optimization
+- **Technical Innovation**: GPS memory, ambient sounds, group conversations
 
-## Deployment
-
-### Vercel (Frontend)
-
-The frontend is configured to deploy from the `frontend/` directory using the `vercel.json` configuration at the repository root.
-
-#### Required Environment Variables
-
-Set the following environment variables in your Vercel project settings:
-
-| Variable | Description | Example |
-|---|---|---|
-| `VITE_SUPABASE_URL` | Your Supabase project URL | `https://xxxxx.supabase.co` |
-| `VITE_SUPABASE_ANON_KEY` | Your Supabase anon/public key | `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...` |
-| `VITE_BACKEND_URL` | Render backend URL (without trailing slash) | `https://your-app.onrender.com` |
-
-#### Deployment Configuration
-
-The `vercel.json` file at the repository root configures:
-- Build command: `cd frontend && npm install && npm run build`
-- Output directory: `frontend/dist`
-- API proxy: `/api/*` routes are proxied to the Render backend
-- WebSocket proxy: `/ws/*` routes are proxied to the Render backend
-
-After deploying to Render, update the `destination` URLs in `vercel.json` to point to your actual Render backend URL.
-
-### Render (Backend)
-
-The backend is deployed to Render using the `render.yaml` configuration file at the repository root. Render will automatically detect this file and deploy your backend service.
-
-#### Required Environment Variables
-
-Set the following environment variables in your Render service settings:
-
-| Variable | Description | Example |
-|---|---|---|
-| `ELEVENLABS_API_KEY` | ElevenLabs API key for voice and audio services | `sk_...` |
-| `GEMINI_API_KEY` | Google Gemini API key for vision identification | `AIza...` |
-| `SUPABASE_URL` | Your Supabase project URL | `https://xxxxx.supabase.co` |
-| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key (keep secret) | `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...` |
-| `ALLOWED_ORIGINS` | Comma-separated list of allowed CORS origins | `https://your-app.vercel.app` |
-
-#### Deployment Configuration
-
-The `render.yaml` file at the repository root configures:
-- Python runtime with version 3.11.0
-- Root directory: `backend/`
-- Build command: `pip install -r requirements.txt`
-- Start command: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
-- Environment variables (set these in Render dashboard)
-
-#### Deployment Steps
-
-1. Connect your GitHub repository to Render
-2. Render will automatically detect the `render.yaml` file
-3. Set all required environment variables in the Render dashboard
-4. Deploy the service
-5. Copy your Render backend URL and update:
-   - The `VITE_BACKEND_URL` environment variable in your Vercel project
-   - The `destination` URLs in `vercel.json` to point to your Render backend
-
-## License
+## 📄 License
 
 MIT © 2025 WhisperWorld
