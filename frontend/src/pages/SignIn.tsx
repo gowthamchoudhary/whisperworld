@@ -45,13 +45,13 @@ export default function SignIn(): JSX.Element {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-8">
+    <div className="min-h-screen flex items-center justify-center px-4 py-8" style={{ backgroundColor: '#0a0f0a' }}>
       <div className="w-full max-w-md">
         {/* Logo/Header */}
         <div className="text-center mb-8">
           <div className="text-6xl mb-4">🌿</div>
           <h1 className="text-3xl font-bold text-white mb-2">WhisperWorld</h1>
-          <p className="text-slate-400">Talk to nature's creatures</p>
+          <p className="text-gray-400">Talk to nature's creatures</p>
         </div>
         
         <div className="glass-effect rounded-2xl p-6">
@@ -62,23 +62,23 @@ export default function SignIn(): JSX.Element {
             <button
               onClick={handleDemoMode}
               disabled={loading}
-              className="w-full nature-gradient rounded-lg px-4 py-3 text-white font-medium hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-slate-900 disabled:opacity-50 transition-all duration-200 mb-4"
+              className="w-full nature-gradient rounded-lg px-4 py-3 text-white font-medium hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-gray-900 disabled:opacity-50 transition-all duration-200 mb-4"
               style={{ minHeight: '44px' }}
             >
               <span className="text-lg mr-2">🚀</span>
               Try Demo (No signup needed!)
             </button>
-            <p className="text-center text-xs text-slate-500">
+            <p className="text-center text-xs text-gray-500">
               Instant access • No email required • Full features
             </p>
           </div>
 
           <div className="relative mb-6">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-600"></div>
+              <div className="w-full border-t border-gray-600"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-slate-900 text-slate-400">or sign in with your account</span>
+              <span className="px-2 bg-gray-900 text-gray-400">or sign in with your account</span>
             </div>
           </div>
           
@@ -90,7 +90,7 @@ export default function SignIn(): JSX.Element {
             )}
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-slate-300 mb-2">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
                 Email
               </label>
               <input
@@ -99,14 +99,14 @@ export default function SignIn(): JSX.Element {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full rounded-lg bg-slate-800/50 border border-slate-600 px-4 py-3 text-white placeholder-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                className="w-full rounded-lg bg-gray-800/50 border border-gray-600 px-4 py-3 text-white placeholder-gray-400 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500/20"
                 placeholder="Enter your email"
                 style={{ minHeight: '44px' }}
               />
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-slate-300 mb-2">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
                 Password
               </label>
               <input
@@ -115,7 +115,7 @@ export default function SignIn(): JSX.Element {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full rounded-lg bg-slate-800/50 border border-slate-600 px-4 py-3 text-white placeholder-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                className="w-full rounded-lg bg-gray-800/50 border border-gray-600 px-4 py-3 text-white placeholder-gray-400 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500/20"
                 placeholder="Enter your password"
                 style={{ minHeight: '44px' }}
               />
@@ -124,12 +124,12 @@ export default function SignIn(): JSX.Element {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-slate-700/50 rounded-lg px-4 py-3 text-slate-300 font-medium hover:bg-slate-700/70 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 focus:ring-offset-slate-900 disabled:opacity-50 transition-all duration-200"
+              className="w-full bg-gray-700/50 rounded-lg px-4 py-3 text-gray-300 font-medium hover:bg-gray-700/70 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-gray-900 disabled:opacity-50 transition-all duration-200"
               style={{ minHeight: '44px' }}
             >
               {loading ? (
                 <div className="flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-slate-300 mr-2"></div>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-300 mr-2"></div>
                   Signing in...
                 </div>
               ) : (
@@ -138,11 +138,11 @@ export default function SignIn(): JSX.Element {
             </button>
           </form>
 
-          <p className="mt-6 text-center text-sm text-slate-400">
+          <p className="mt-6 text-center text-sm text-gray-400">
             Don't have an account?{' '}
             <Link
               to="/signup"
-              className="text-emerald-400 hover:text-emerald-300 font-medium transition-colors"
+              className="text-green-400 hover:text-green-300 font-medium transition-colors"
             >
               Sign Up
             </Link>

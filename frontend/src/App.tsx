@@ -36,6 +36,14 @@ function App(): JSX.Element {
             } 
           />
           <Route 
+            path="/creature/:id" 
+            element={
+              <AuthGuard>
+                <CreaturePage />
+              </AuthGuard>
+            } 
+          />
+          <Route 
             path="/creature" 
             element={
               <AuthGuard>
@@ -44,7 +52,23 @@ function App(): JSX.Element {
             } 
           />
           <Route 
+            path="/session/:id" 
+            element={
+              <AuthGuard>
+                <VoiceSessionPage />
+              </AuthGuard>
+            } 
+          />
+          <Route 
             path="/voice-session" 
+            element={
+              <AuthGuard>
+                <VoiceSessionPage />
+              </AuthGuard>
+            } 
+          />
+          <Route 
+            path="/sing/:id" 
             element={
               <AuthGuard>
                 <VoiceSessionPage />

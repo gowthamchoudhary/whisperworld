@@ -12,7 +12,7 @@ export default function OrientationGuard(): JSX.Element {
       <h2 className="text-2xl font-bold text-white mb-4">
         Please Rotate Your Device
       </h2>
-      <p className="text-base text-slate-300 max-w-sm text-center">
+      <p className="text-base text-gray-300 max-w-sm text-center">
         WhisperWorld is designed for portrait orientation. Please rotate your
         device to continue.
       </p>

@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Dark nature theme with green accents */
+/* Dark nature theme with specific colors */
 @layer base {
   html {
     font-size: 16px;
@@ -12,8 +12,9 @@
     font-size: 16px;
     overflow-x: hidden;
     min-height: 100dvh;
-    background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
-    color: #e2e8f0;
+    background: #0a0f0a;
+    color: #ffffff;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
   }
 
   button,
@@ -33,23 +34,23 @@
 /* Custom nature-themed components */
 @layer components {
   .nature-gradient {
-    background: linear-gradient(135deg, #065f46 0%, #10b981 50%, #059669 100%);
+    background: linear-gradient(135deg, #4ade80 0%, #22c55e 50%, #16a34a 100%);
   }
   
   .nature-gradient-soft {
-    background: linear-gradient(135deg, #064e3b 0%, #047857 50%, #065f46 100%);
+    background: linear-gradient(135deg, #22c55e 0%, #16a34a 50%, #15803d 100%);
   }
   
   .glass-effect {
-    background: rgba(15, 23, 42, 0.8);
+    background: rgba(26, 47, 26, 0.8);
     backdrop-filter: blur(12px);
-    border: 1px solid rgba(16, 185, 129, 0.2);
+    border: 1px solid rgba(74, 222, 128, 0.2);
   }
   
   .creature-card {
-    background: linear-gradient(145deg, #1e293b 0%, #334155 100%);
-    border: 2px solid rgba(16, 185, 129, 0.3);
-    box-shadow: 0 8px 32px rgba(16, 185, 129, 0.1);
+    background: #1a2f1a;
+    border: 2px solid rgba(74, 222, 128, 0.3);
+    box-shadow: 0 8px 32px rgba(74, 222, 128, 0.1);
   }
   
   .speaking-animation {
@@ -58,38 +59,52 @@
   
   @keyframes pulse-green {
     0%, 100% {
-      box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+      box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.7);
     }
     50% {
-      box-shadow: 0 0 0 20px rgba(16, 185, 129, 0);
+      box-shadow: 0 0 0 20px rgba(74, 222, 128, 0);
     }
   }
   
   .camera-button {
-    background: linear-gradient(145deg, #10b981, #059669);
-    box-shadow: 0 8px 32px rgba(16, 185, 129, 0.3);
+    background: linear-gradient(145deg, #4ade80, #22c55e);
+    box-shadow: 0 8px 32px rgba(74, 222, 128, 0.3);
     transition: all 0.3s ease;
   }
   
   .camera-button:hover {
     transform: translateY(-2px);
-    box-shadow: 0 12px 40px rgba(16, 185, 129, 0.4);
+    box-shadow: 0 12px 40px rgba(74, 222, 128, 0.4);
   }
   
   .camera-button:active {
     transform: translateY(0);
   }
+
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
 }
 
 /* Landscape orientation guard overlay */
-@media (orientation: landscape) {
+@media (orientation: landscape) and (max-height: 600px) {
   .orientation-guard {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    background: #0a0f0a;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -97,13 +112,13 @@
     z-index: 9999;
     padding: 1rem;
     text-align: center;
-    color: #e2e8f0;
+    color: #ffffff;
   }
 
   .orientation-guard-icon {
     font-size: 4rem;
     margin-bottom: 1rem;
-    color: #10b981;
+    color: #4ade80;
     animation: rotate-pulse 2s ease-in-out infinite;
   }
 
@@ -117,7 +132,7 @@
   }
 }
 
-@media (orientation: portrait) {
+@media (orientation: portrait), (orientation: landscape) and (min-height: 601px) {
   .orientation-guard {
     display: none;
   }

@@ -29,22 +29,42 @@ interface CreatureCardProps {
   identification: IdentificationResult;
   gps?: { lat: number; lng: number };
   onProfileLoaded: (profile: CreatureProfile) => void;
+  onTalkClick?: (profile: CreatureProfile) => void;
+  onSingClick?: (profile: CreatureProfile) => void;
 }
 
-const CATEGORY_COLORS: Record<string, string> = {
-  flower: 'bg-pink-100 text-pink-800',
-  insect: 'bg-yellow-100 text-yellow-800',
-  tree: 'bg-green-100 text-green-800',
-  squirrel: 'bg-orange-100 text-orange-800',
-  mushroom: 'bg-purple-100 text-purple-800',
-  bird: 'bg-blue-100 text-blue-800',
-  default: 'bg-gray-100 text-gray-800',
+const getCategoryEmoji = (category: string): string => {
+  const emojiMap: Record<string, string> = {
+    flower: '🌸',
+    insect: '🐛',
+    tree: '🌳',
+    squirrel: '🐿️',
+    mushroom: '🍄',
+    bird: '🐦',
+    default: '🌿',
+  };
+  return emojiMap[category] || emojiMap.default;
+};
+
+const getCategoryColor = (category: string): string => {
+  const colorMap: Record<string, string> = {
+    flower: 'from-pink-500 to-rose-500',
+    insect: 'from-amber-500 to-orange-500',
+    tree: 'from-green-600 to-emerald-600',
+    squirrel: 'from-amber-600 to-yellow-600',
+    mushroom: 'from-purple-500 to-violet-500',
+    bird: 'from-blue-500 to-cyan-500',
+    default: 'from-emerald-500 to-green-500',
+  };
+  return colorMap[category] || colorMap.default;
 };
 
 export default function CreatureCard({
   identification,
   gps,
   onProfileLoaded,
+  onTalkClick,
+  onSingClick,
 }: CreatureCardProps): JSX.Element {
   const [profile, setProfile] = useState<CreatureProfile | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -56,32 +76,65 @@ export default function CreatureCard({
       setError('');
 
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        // Get session (demo or real)
+        const demoMode = localStorage.getItem('demoMode');
+        let session;
+        
+        if (demoMode === 'true') {
+          // Use demo session
+          const demoUser = localStorage.getItem('demoUser');
+          session = demoUser ? { access_token: JSON.parse(demoUser).access_token } : null;
+        } else {
+          // Use real Supabase session
+          const { data } = await supabase.auth.getSession();
+          session = data.session;
+        }
+
         if (!session) {
           throw new Error('Not authenticated');
         }
 
-        const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
-        const response = await fetch(`${apiBaseUrl}/api/profile`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({
-            identification_result: identification,
-            gps: gps || null,
-          }),
-        });
+        // Call profile API with retry logic
+        const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+        let lastError: Error | null = null;
+        
+        for (let attempt = 1; attempt <= 3; attempt++) {
+          try {
+            const response = await fetch(`${BASE_URL}/api/profile`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${session.access_token}`,
+              },
+              body: JSON.stringify({
+                identificationResult: identification,
+                gps: gps || null,
+              }),
+            });
 
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
-          throw new Error(errorData.detail || `Server error: ${response.status}`);
+            if (!response.ok) {
+              const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
+              throw new Error(errorData.detail || `Server error: ${response.status}`);
+            }
+
+            const loadedProfile: CreatureProfile = await response.json();
+            setProfile(loadedProfile);
+            onProfileLoaded(loadedProfile);
+            return; // Success, exit retry loop
+          } catch (err) {
+            lastError = err instanceof Error ? err : new Error('Unknown error');
+            
+            if (attempt < 3) {
+              // Wait before retry (exponential backoff: 1s, 2s)
+              const delay = Math.pow(2, attempt - 1) * 1000;
+              console.log(`Profile attempt ${attempt} failed, retrying in ${delay}ms:`, lastError.message);
+              await new Promise(resolve => setTimeout(resolve, delay));
+            }
+          }
         }
-
-        const loadedProfile: CreatureProfile = await response.json();
-        setProfile(loadedProfile);
-        onProfileLoaded(loadedProfile);
+        
+        // All retries failed
+        throw lastError;
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Failed to load profile';
         setError(errorMessage);
@@ -96,77 +149,102 @@ export default function CreatureCard({
 
   if (isLoading) {
     return (
-      <div className="w-full max-w-md rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-        <div className="flex items-center justify-center">
-          <p className="text-base text-gray-600">Creating creature profile...</p>
+      <div className="creature-card rounded-2xl p-6 text-center">
+        <div className="flex items-center justify-center mb-4">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div>
         </div>
+        <p className="text-slate-300">Creating creature profile...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="w-full max-w-md rounded-lg border border-red-200 bg-red-50 p-6">
-        <p className="text-base text-red-800">{error}</p>
+      <div className="creature-card rounded-2xl p-6 border-red-500/50">
+        <div className="text-center">
+          <div className="text-4xl mb-2">😔</div>
+          <p className="text-red-300 mb-4">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="nature-gradient rounded-lg px-4 py-2 text-white font-medium hover:opacity-90 transition-opacity"
+          >
+            Try Again
+          </button>
+        </div>
       </div>
     );
   }
 
   if (!profile) {
     return (
-      <div className="w-full max-w-md rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-        <p className="text-base text-gray-600">No profile data available</p>
+      <div className="creature-card rounded-2xl p-6">
+        <p className="text-slate-400 text-center">No profile data available</p>
       </div>
     );
   }
 
-  const categoryColor = CATEGORY_COLORS[profile.category] || CATEGORY_COLORS.default;
-
   return (
-    <div className="w-full max-w-md rounded-lg border border-gray-200 bg-white p-6 shadow-md">
-      {/* Creature name and category badge */}
-      <div className="mb-4 flex items-start justify-between">
-        <div>
-          <h2 className="text-xl font-bold text-gray-900">{profile.name}</h2>
-          <p className="text-base text-gray-600">{profile.commonName}</p>
+    <div className="creature-card rounded-2xl p-6">
+      <div className="flex items-start space-x-4 mb-6">
+        {/* Creature Avatar */}
+        <div className={`w-16 h-16 rounded-full bg-gradient-to-br ${getCategoryColor(profile.category)} flex items-center justify-center text-2xl flex-shrink-0`}>
+          {getCategoryEmoji(profile.category)}
         </div>
-        <span
-          className={`rounded-full px-3 py-1 text-sm font-medium ${categoryColor}`}
-        >
-          {profile.category}
-        </span>
-      </div>
 
-      {/* Personality traits */}
-      <div className="mb-4">
-        <h3 className="mb-2 text-base font-semibold text-gray-700">Personality</h3>
-        <div className="flex flex-wrap gap-2">
-          {profile.traits.map((trait, index) => (
-            <span
-              key={index}
-              className="rounded-md bg-gray-100 px-3 py-1 text-sm text-gray-700"
-            >
-              {trait}
+        {/* Creature Info */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center space-x-2 mb-2">
+            <h2 className="text-xl font-bold text-white">{profile.name}</h2>
+            <span className={`px-2 py-1 rounded-full text-xs font-medium bg-gradient-to-r ${getCategoryColor(profile.category)} text-white`}>
+              {profile.category}
             </span>
-          ))}
+          </div>
+          
+          <p className="text-slate-300 text-sm mb-2">{profile.commonName}</p>
+          
+          {/* Personality Traits */}
+          <div className="flex flex-wrap gap-1 mb-3">
+            {profile.traits.slice(0, 3).map((trait, index) => (
+              <span
+                key={index}
+                className="px-2 py-1 bg-slate-700/50 rounded-full text-xs text-slate-300"
+              >
+                {trait}
+              </span>
+            ))}
+          </div>
         </div>
       </div>
 
       {/* Backstory */}
-      <div className="mb-4">
-        <h3 className="mb-2 text-base font-semibold text-gray-700">Backstory</h3>
-        <p className="text-base leading-relaxed text-gray-600">{profile.backstory}</p>
+      <div className="mb-6">
+        <p className="text-slate-400 text-sm leading-relaxed line-clamp-3">{profile.backstory}</p>
       </div>
 
-      {/* Speaking style */}
-      <div className="mb-4">
-        <h3 className="mb-2 text-base font-semibold text-gray-700">Speaking Style</h3>
-        <p className="text-base italic text-gray-600">{profile.speakingStyle}</p>
+      {/* Action Buttons */}
+      <div className="space-y-3">
+        <button
+          onClick={() => onTalkClick?.(profile)}
+          className="w-full nature-gradient rounded-xl px-6 py-4 text-white font-semibold text-lg hover:opacity-90 transition-all duration-200 flex items-center justify-center"
+          style={{ minHeight: '56px' }}
+        >
+          <span className="text-2xl mr-3">🗣️</span>
+          TALK
+        </button>
+
+        <button
+          onClick={() => onSingClick?.(profile)}
+          className="w-full nature-gradient-soft rounded-xl px-6 py-3 text-white font-medium hover:opacity-90 transition-all duration-200 flex items-center justify-center"
+          style={{ minHeight: '48px' }}
+        >
+          <span className="text-xl mr-2">🎵</span>
+          SING
+        </button>
       </div>
 
-      {/* Confidence score */}
-      <div className="mt-4 border-t border-gray-200 pt-4">
-        <p className="text-sm text-gray-500">
+      {/* Confidence Score */}
+      <div className="mt-4 pt-4 border-t border-slate-600/50">
+        <p className="text-xs text-slate-500 text-center">
           Confidence: {Math.round(identification.confidence * 100)}%
         </p>
       </div>

@@ -52,6 +52,7 @@ export default function VoiceSessionPage(): JSX.Element {
   const [error, setError] = useState<string>('');
   const [reconnectAttempts, setReconnectAttempts] = useState<number>(0);
   const [isSinging, setIsSinging] = useState<boolean>(false);
+  const [transcript, setTranscript] = useState<string[]>([]);
   
   const wsRef = useRef<WebSocket | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -62,6 +63,7 @@ export default function VoiceSessionPage(): JSX.Element {
     const state = location.state as {
       profile: CreatureProfile;
       imageUrl: string;
+      requestSong?: boolean;
     } | null;
 
     if (!state?.profile) {
@@ -78,8 +80,14 @@ export default function VoiceSessionPage(): JSX.Element {
 
   const startAmbientSounds = async (category: string): Promise<void> => {
     try {
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
-      const response = await fetch(`${apiBaseUrl}/api/ambient?category=${encodeURIComponent(category)}`);
+      const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+      const response = await fetch(`${BASE_URL}/api/ambient`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ category }),
+      });
       
       if (response.ok) {
         const audioBlob = await response.blob();
@@ -98,7 +106,7 @@ export default function VoiceSessionPage(): JSX.Element {
   };
 
   const connectWebSocket = async (): Promise<void> => {
-    if (!profile) return;
+    if (!profile || isConnecting || isConnected) return;
 
     setIsConnecting(true);
     setError('');
@@ -127,102 +135,139 @@ export default function VoiceSessionPage(): JSX.Element {
         audioContextRef.current = new AudioContext();
       }
 
-      // Connect WebSocket
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
-      const wsProtocol = apiBaseUrl.startsWith('https:') ? 'wss:' : 'ws:';
-      const wsHost = apiBaseUrl.replace(/^https?:\/\//, '');
-      const wsUrl = `${wsProtocol}//${wsHost}/ws/session?profileId=${profile.id}&token=${session.access_token}`;
+      // Connect WebSocket with retry logic
+      const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+      const wsUrl = BASE_URL.replace('https://', 'wss://').replace('http://', 'ws://');
+      const fullWsUrl = `${wsUrl}/ws/session?profileId=${profile.id}&token=${session.access_token}`;
       
-      const ws = new WebSocket(wsUrl);
-      wsRef.current = ws;
-
-      ws.onopen = async () => {
-        setIsConnected(true);
-        setIsConnecting(false);
-        setReconnectAttempts(0);
-        
-        // Start capturing microphone audio
+      let lastError: Error | null = null;
+      
+      for (let attempt = 1; attempt <= 3; attempt++) {
         try {
-          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-          streamRef.current = stream;
-          
-          const mediaRecorder = new MediaRecorder(stream, {
-            mimeType: 'audio/webm',
-          });
-          mediaRecorderRef.current = mediaRecorder;
+          const ws = new WebSocket(fullWsUrl);
+          wsRef.current = ws;
 
-          mediaRecorder.ondataavailable = (event) => {
-            if (event.data.size > 0 && ws.readyState === WebSocket.OPEN) {
-              ws.send(event.data);
+          ws.onopen = async () => {
+            setIsConnected(true);
+            setIsConnecting(false);
+            setReconnectAttempts(0);
+            
+            // Start capturing microphone audio
+            try {
+              const stream = await navigator.mediaDevices.getUserMedia({ 
+                audio: {
+                  echoCancellation: true,
+                  noiseSuppression: true,
+                  sampleRate: 16000
+                } 
+              });
+              streamRef.current = stream;
+              
+              const mediaRecorder = new MediaRecorder(stream, {
+                mimeType: 'audio/webm;codecs=opus',
+              });
+              mediaRecorderRef.current = mediaRecorder;
+
+              mediaRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0 && ws.readyState === WebSocket.OPEN) {
+                  ws.send(event.data);
+                }
+              };
+
+              mediaRecorder.onstop = () => {
+                setIsUserSpeaking(false);
+              };
+
+              mediaRecorder.start(100); // Send chunks every 100ms
+              setIsUserSpeaking(true);
+            } catch (err) {
+              console.error('Microphone access error:', err);
+              setError('Microphone access denied. Please allow microphone access to talk.');
             }
           };
 
-          mediaRecorder.start(100); // Send chunks every 100ms
-          setIsUserSpeaking(true);
-        } catch (err) {
-          setError('Microphone access denied. Please allow microphone access to talk to the creature.');
-        }
-      };
-
-      ws.onmessage = async (event) => {
-        if (event.data instanceof Blob) {
-          // Received audio from creature
-          setIsSpeaking(true);
-          
-          try {
-            const arrayBuffer = await event.data.arrayBuffer();
-            const audioBuffer = await audioContextRef.current!.decodeAudioData(arrayBuffer);
-            
-            const source = audioContextRef.current!.createBufferSource();
-            source.buffer = audioBuffer;
-            source.connect(audioContextRef.current!.destination);
-            
-            source.onended = () => {
-              setIsSpeaking(false);
-            };
-            
-            source.start();
-          } catch (err) {
-            console.error('Audio playback error:', err);
-            setIsSpeaking(false);
-          }
-        } else {
-          // Handle text messages (speaking events, etc.)
-          try {
-            const message = JSON.parse(event.data);
-            if (message.type === 'speaking') {
-              setIsSpeaking(message.speaking);
+          ws.onmessage = async (event) => {
+            if (event.data instanceof Blob) {
+              // Audio data from creature
+              setIsSpeaking(true);
+              
+              try {
+                const arrayBuffer = await event.data.arrayBuffer();
+                
+                if (audioContextRef.current) {
+                  const audioBuffer = await audioContextRef.current.decodeAudioData(arrayBuffer);
+                  const source = audioContextRef.current.createBufferSource();
+                  source.buffer = audioBuffer;
+                  source.connect(audioContextRef.current.destination);
+                  
+                  source.onended = () => {
+                    setIsSpeaking(false);
+                  };
+                  
+                  source.start();
+                }
+              } catch (err) {
+                console.error('Audio playback error:', err);
+                setIsSpeaking(false);
+              }
+            } else {
+              // Text message (transcript, status, etc.)
+              try {
+                const message = JSON.parse(event.data);
+                if (message.type === 'transcript') {
+                  setTranscript(prev => [...prev, `${message.speaker}: ${message.text}`]);
+                } else if (message.type === 'speaking') {
+                  setIsSpeaking(message.speaking);
+                }
+              } catch (err) {
+                // Handle plain text messages
+                if (typeof event.data === 'string') {
+                  setTranscript(prev => [...prev, `${profile.name}: ${event.data}`]);
+                }
+              }
             }
-          } catch (err) {
-            // Ignore non-JSON messages
+          };
+
+          ws.onerror = (error) => {
+            console.error('WebSocket error:', error);
+            throw new Error('Connection error occurred');
+          };
+
+          ws.onclose = () => {
+            setIsConnected(false);
+            setIsConnecting(false);
+            setIsSpeaking(false);
+            
+            // Attempt reconnection (max 3 times)
+            if (reconnectAttempts < 3) {
+              const backoff = Math.pow(2, reconnectAttempts) * 1000;
+              setTimeout(() => {
+                setReconnectAttempts(prev => prev + 1);
+                connectWebSocket();
+              }, backoff);
+            } else {
+              setError('Connection lost. Please try again.');
+            }
+          };
+          
+          return; // Success, exit retry loop
+        } catch (err) {
+          lastError = err instanceof Error ? err : new Error('Unknown error');
+          
+          if (attempt < 3) {
+            // Wait before retry (exponential backoff: 1s, 2s)
+            const delay = Math.pow(2, attempt - 1) * 1000;
+            console.log(`WebSocket attempt ${attempt} failed, retrying in ${delay}ms:`, lastError.message);
+            await new Promise(resolve => setTimeout(resolve, delay));
           }
         }
-      };
-
-      ws.onerror = (error) => {
-        console.error('WebSocket error:', error);
-        setError('Connection error. Please try again.');
-      };
-
-      ws.onclose = () => {
-        setIsConnected(false);
-        setIsConnecting(false);
-        setIsSpeaking(false);
-        
-        // Attempt to reconnect
-        if (reconnectAttempts < 3) {
-          setTimeout(() => {
-            setReconnectAttempts(prev => prev + 1);
-            connectWebSocket();
-          }, 2000 * Math.pow(2, reconnectAttempts));
-        } else {
-          setError('Connection lost. Please try again.');
-        }
-      };
-
+      }
+      
+      // All retries failed
+      throw lastError;
     } catch (err) {
       console.error('WebSocket connection error:', err);
-      setError('Failed to connect. Please try again.');
+      setError(err instanceof Error ? err.message : 'Failed to connect');
       setIsConnecting(false);
     }
   };
@@ -272,29 +317,51 @@ export default function VoiceSessionPage(): JSX.Element {
         return;
       }
 
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
-      const response = await fetch(`${apiBaseUrl}/api/sing`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({ profileId: profile.id }),
-      });
+      // Call sing API with retry logic
+      const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+      let lastError: Error | null = null;
+      
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          const response = await fetch(`${BASE_URL}/api/sing`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${session.access_token}`,
+            },
+            body: JSON.stringify({ profileId: profile.id }),
+          });
 
-      if (!response.ok) {
-        throw new Error('Failed to generate song');
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.detail || 'Failed to generate song');
+          }
+
+          const audioBlob = await response.blob();
+          const audioUrl = URL.createObjectURL(audioBlob);
+          const audio = new Audio(audioUrl);
+          
+          audio.onended = () => {
+            setIsSinging(false);
+            URL.revokeObjectURL(audioUrl);
+          };
+          
+          await audio.play();
+          return; // Success, exit retry loop
+        } catch (err) {
+          lastError = err instanceof Error ? err : new Error('Unknown error');
+          
+          if (attempt < 3) {
+            // Wait before retry (exponential backoff: 1s, 2s)
+            const delay = Math.pow(2, attempt - 1) * 1000;
+            console.log(`Sing attempt ${attempt} failed, retrying in ${delay}ms:`, lastError.message);
+            await new Promise(resolve => setTimeout(resolve, delay));
+          }
+        }
       }
-
-      const audioBlob = await response.blob();
-      const audioUrl = URL.createObjectURL(audioBlob);
-      const audio = new Audio(audioUrl);
       
-      audio.onended = () => {
-        setIsSinging(false);
-      };
-      
-      await audio.play();
+      // All retries failed
+      throw lastError;
     } catch (err) {
       console.error('Singing error:', err);
       setError('Failed to generate song. Please try again.');
@@ -309,20 +376,21 @@ export default function VoiceSessionPage(): JSX.Element {
 
   if (!profile) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#0a0f0a' }}>
         <div className="text-white">Loading...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#0a0f0a' }}>
       {/* Header */}
-      <div className="glass-effect border-b border-emerald-500/20 p-4">
+      <div className="glass-effect border-b border-green-500/20 p-4">
         <div className="flex items-center">
           <button
             onClick={handleBack}
-            className="text-slate-400 hover:text-white transition-colors mr-4"
+            className="text-gray-400 hover:text-white transition-colors mr-4"
+            style={{ minHeight: '44px' }}
           >
             ← Back
           </button>
@@ -345,12 +413,12 @@ export default function VoiceSessionPage(): JSX.Element {
         {/* Creature Info */}
         <div className="text-center mb-8">
           <h2 className="text-2xl font-bold text-white mb-2">{profile.name}</h2>
-          <p className="text-slate-400 mb-4">{profile.commonName}</p>
+          <p className="text-gray-400 mb-4">{profile.commonName}</p>
           <div className="flex flex-wrap justify-center gap-2 mb-4">
             {profile.traits.slice(0, 3).map((trait, i) => (
               <span
                 key={i}
-                className="px-3 py-1 bg-slate-700/50 rounded-full text-sm text-slate-300"
+                className="px-3 py-1 bg-gray-700/50 rounded-full text-sm text-gray-300"
               >
                 {trait}
               </span>
@@ -375,28 +443,28 @@ export default function VoiceSessionPage(): JSX.Element {
         {isConnecting && (
           <div className="text-center mb-6">
             <div className="flex items-center justify-center mb-4">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500"></div>
             </div>
-            <p className="text-slate-400">Connecting to {profile.name}...</p>
+            <p className="text-gray-400">Connecting to {profile.name}...</p>
           </div>
         )}
 
         {isConnected && (
-          <div className="text-center space-y-4">
+          <div className="text-center space-y-4 w-full max-w-sm">
             {/* Speaking Status */}
             <div className="glass-effect rounded-2xl p-6 mb-6">
               {isSpeaking ? (
-                <div className="text-emerald-400">
-                  <div className="text-2xl mb-2">🗣️</div>
+                <div className="text-green-400">
+                  <div className="text-2xl mb-2 animate-pulse">🗣️</div>
                   <p className="font-medium">{profile.name} is speaking...</p>
                 </div>
               ) : isUserSpeaking ? (
                 <div className="text-blue-400">
-                  <div className="text-2xl mb-2">🎤</div>
+                  <div className="text-2xl mb-2 animate-pulse">🎤</div>
                   <p className="font-medium">You can speak now</p>
                 </div>
               ) : (
-                <div className="text-slate-400">
+                <div className="text-gray-400">
                   <div className="text-2xl mb-2">👂</div>
                   <p className="font-medium">Listening...</p>
                 </div>
@@ -408,7 +476,7 @@ export default function VoiceSessionPage(): JSX.Element {
               <button
                 onClick={handleSing}
                 disabled={isSinging}
-                className="nature-gradient-soft rounded-xl px-6 py-3 text-white font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                className="flex-1 nature-gradient-soft rounded-xl px-4 py-3 text-white font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
                 style={{ minHeight: '44px' }}
               >
                 {isSinging ? (
@@ -419,14 +487,14 @@ export default function VoiceSessionPage(): JSX.Element {
                 ) : (
                   <>
                     <span className="text-lg mr-2">🎵</span>
-                    Ask to Sing
+                    Sing
                   </>
                 )}
               </button>
 
               <button
                 onClick={disconnect}
-                className="bg-slate-700/50 rounded-xl px-6 py-3 text-slate-300 font-medium hover:bg-slate-700/70 transition-colors"
+                className="flex-1 bg-gray-700/50 rounded-xl px-4 py-3 text-gray-300 font-medium hover:bg-gray-700/70 transition-colors"
                 style={{ minHeight: '44px' }}
               >
                 End Chat
@@ -435,10 +503,31 @@ export default function VoiceSessionPage(): JSX.Element {
           </div>
         )}
 
+        {/* Transcript */}
+        {transcript.length > 0 && (
+          <div className="glass-effect rounded-2xl p-4 max-h-32 overflow-y-auto w-full max-w-sm mt-4">
+            <h3 className="text-sm font-medium text-gray-300 mb-2">Conversation</h3>
+            <div className="space-y-1">
+              {transcript.slice(-5).map((line, index) => (
+                <p key={index} className="text-xs text-gray-400">{line}</p>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Error */}
         {error && (
-          <div className="glass-effect rounded-xl p-4 border border-red-500/30 max-w-sm">
+          <div className="glass-effect rounded-xl p-4 border border-red-500/30 max-w-sm mt-4">
             <p className="text-red-300 text-sm text-center">{error}</p>
+            <button
+              onClick={() => {
+                setError('');
+                connectWebSocket();
+              }}
+              className="mt-2 text-sm text-red-300 hover:text-red-100 underline block mx-auto"
+            >
+              Try again
+            </button>
           </div>
         )}
       </div>

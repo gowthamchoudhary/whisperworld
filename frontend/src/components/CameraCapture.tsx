@@ -63,37 +63,68 @@ export default function CameraCapture({ onIdentificationComplete, onError }: Cam
       // Get GPS coordinates
       const gps = await getGPSCoordinates();
 
-      // Get JWT token from Supabase session
-      const { data: { session } } = await supabase.auth.getSession();
+      // Get session (demo or real)
+      const demoMode = localStorage.getItem('demoMode');
+      let session;
+      
+      if (demoMode === 'true') {
+        // Use demo session
+        const demoUser = localStorage.getItem('demoUser');
+        session = demoUser ? { access_token: JSON.parse(demoUser).access_token } : null;
+      } else {
+        // Use real Supabase session
+        const { data } = await supabase.auth.getSession();
+        session = data.session;
+      }
+
       if (!session) {
         throw new Error('Not authenticated');
       }
 
       // Build FormData
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('image', file);
       if (gps) {
-        formData.append('lat', gps.lat.toString());
-        formData.append('lng', gps.lng.toString());
+        formData.append('latitude', gps.lat.toString());
+        formData.append('longitude', gps.lng.toString());
       }
 
-      // POST to backend
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
-      const response = await fetch(`${apiBaseUrl}/api/identify`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: formData,
-      });
+      // POST to backend with retry logic
+      const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+      let lastError: Error | null = null;
+      
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          const response = await fetch(`${BASE_URL}/api/identify`, {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${session.access_token}`,
+            },
+            body: formData,
+          });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
-        throw new Error(errorData.detail || `Server error: ${response.status}`);
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
+            throw new Error(errorData.detail || `Server error: ${response.status}`);
+          }
+
+          const results: IdentificationResult[] = await response.json();
+          onIdentificationComplete(results);
+          return; // Success, exit retry loop
+        } catch (err) {
+          lastError = err instanceof Error ? err : new Error('Unknown error');
+          
+          if (attempt < 3) {
+            // Wait before retry (exponential backoff: 1s, 2s)
+            const delay = Math.pow(2, attempt - 1) * 1000;
+            console.log(`Attempt ${attempt} failed, retrying in ${delay}ms:`, lastError.message);
+            await new Promise(resolve => setTimeout(resolve, delay));
+          }
+        }
       }
-
-      const results: IdentificationResult[] = await response.json();
-      onIdentificationComplete(results);
+      
+      // All retries failed
+      throw lastError;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to identify image';
       setError(errorMessage);
@@ -111,6 +142,7 @@ export default function CameraCapture({ onIdentificationComplete, onError }: Cam
     const validationError = validateFile(file);
     if (validationError) {
       setError(validationError);
+      onError(validationError);
       return;
     }
 
@@ -128,13 +160,14 @@ export default function CameraCapture({ onIdentificationComplete, onError }: Cam
       <button
         onClick={handleCameraClick}
         disabled={isLoading}
-        className="flex h-16 w-16 items-center justify-center rounded-full bg-blue-600 text-white shadow-lg disabled:bg-gray-400"
+        className="camera-button flex h-20 w-20 items-center justify-center rounded-full text-white shadow-lg disabled:opacity-50"
         aria-label="Capture photo"
+        style={{ minHeight: '80px', minWidth: '80px' }}
       >
         {isLoading ? (
-          <span className="text-2xl">⏳</span>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
         ) : (
-          <span className="text-3xl">📷</span>
+          <span className="text-4xl">📷</span>
         )}
       </button>
 
@@ -151,13 +184,19 @@ export default function CameraCapture({ onIdentificationComplete, onError }: Cam
 
       {/* Loading state */}
       {isLoading && (
-        <p className="text-base text-gray-600">Identifying creature...</p>
+        <p className="text-base text-slate-300">Identifying creature...</p>
       )}
 
       {/* Error message */}
       {error && (
-        <div className="w-full max-w-md rounded-md bg-red-100 p-4 text-base text-red-800">
+        <div className="w-full max-w-md rounded-xl bg-red-900/50 border border-red-500/50 p-4 text-base text-red-200">
           {error}
+          <button
+            onClick={() => setError('')}
+            className="mt-2 text-sm text-red-300 hover:text-red-100 underline"
+          >
+            Try again
+          </button>
         </div>
       )}
     </div>
