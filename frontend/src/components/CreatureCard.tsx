@@ -61,7 +61,8 @@ export default function CreatureCard({
           throw new Error('Not authenticated');
         }
 
-        const response = await fetch('/api/profile', {
+        const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
+        const response = await fetch(`${apiBaseUrl}/api/profile`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

@@ -25,7 +25,8 @@ export default function SongPlayer({ profileId, creatureName }: SongPlayerProps)
       }
 
       // Request song from backend
-      const response = await fetch('/api/sing', {
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
+      const response = await fetch(`${apiBaseUrl}/api/sing`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

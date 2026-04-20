@@ -41,8 +41,10 @@ export default function VoiceSession({ profile, onSessionEnd }: VoiceSessionProp
         }
 
         // Connect WebSocket
-        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const wsUrl = `${wsProtocol}//${window.location.host}/ws/session?profileId=${profile.id}&token=${session.access_token}`;
+        const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
+        const wsProtocol = apiBaseUrl.startsWith('https:') ? 'wss:' : 'ws:';
+        const wsHost = apiBaseUrl.replace(/^https?:\/\//, '');
+        const wsUrl = `${wsProtocol}//${wsHost}/ws/session?profileId=${profile.id}&token=${session.access_token}`;
         
         const ws = new WebSocket(wsUrl);
         wsRef.current = ws;

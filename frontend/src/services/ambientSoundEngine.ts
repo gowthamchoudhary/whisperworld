@@ -22,7 +22,8 @@ class AmbientSoundEngine {
       }
 
       // Fetch audio from backend
-      const response = await fetch(`/api/ambient?category=${encodeURIComponent(category)}`);
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
+      const response = await fetch(`${apiBaseUrl}/api/ambient?category=${encodeURIComponent(category)}`);
 
       // Handle 204 No Content - swallow silently and return
       if (response.status === 204) {

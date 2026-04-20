@@ -54,8 +54,10 @@ export default function GroupSession({ profiles, onSessionEnd }: GroupSessionPro
 
         // Connect WebSocket with multiple profile IDs
         const profileIds = profiles.map(p => p.id).join(',');
-        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const wsUrl = `${wsProtocol}//${window.location.host}/ws/session?profileIds=${profileIds}&token=${session.access_token}`;
+        const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
+        const wsProtocol = apiBaseUrl.startsWith('https:') ? 'wss:' : 'ws:';
+        const wsHost = apiBaseUrl.replace(/^https?:\/\//, '');
+        const wsUrl = `${wsProtocol}//${wsHost}/ws/session?profileIds=${profileIds}&token=${session.access_token}`;
         
         const ws = new WebSocket(wsUrl);
         wsRef.current = ws;

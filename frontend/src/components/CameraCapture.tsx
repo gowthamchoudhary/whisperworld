@@ -78,7 +78,8 @@ export default function CameraCapture({ onIdentificationComplete, onError }: Cam
       }
 
       // POST to backend
-      const response = await fetch('/api/identify', {
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
+      const response = await fetch(`${apiBaseUrl}/api/identify`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${session.access_token}`,
