@@ -1,24 +1,11 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import SignIn from './pages/SignIn';
 import SignUp from './pages/SignUp';
+import CameraPage from './pages/CameraPage';
+import CreaturePage from './pages/CreaturePage';
+import VoiceSessionPage from './pages/VoiceSessionPage';
 import AuthGuard from './components/AuthGuard';
-import Header from './components/Header';
 import OrientationGuard from './components/OrientationGuard';
-
-// Protected app page placeholder
-function AppPage(): JSX.Element {
-  return (
-    <AuthGuard>
-      <Header />
-      <div className="px-4 py-6">
-        <div className="mx-auto max-w-md">
-          <h2 className="text-xl font-bold">Welcome to WhisperWorld</h2>
-          <p className="mt-4 text-base">Protected app content goes here.</p>
-        </div>
-      </div>
-    </AuthGuard>
-  );
-}
 
 function App(): JSX.Element {
   return (
@@ -40,7 +27,30 @@ function App(): JSX.Element {
           <Route path="/" element={<SignIn />} />
           <Route path="/signin" element={<SignIn />} />
           <Route path="/signup" element={<SignUp />} />
-          <Route path="/app" element={<AppPage />} />
+          <Route 
+            path="/app" 
+            element={
+              <AuthGuard>
+                <CameraPage />
+              </AuthGuard>
+            } 
+          />
+          <Route 
+            path="/creature" 
+            element={
+              <AuthGuard>
+                <CreaturePage />
+              </AuthGuard>
+            } 
+          />
+          <Route 
+            path="/voice-session" 
+            element={
+              <AuthGuard>
+                <VoiceSessionPage />
+              </AuthGuard>
+            } 
+          />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>

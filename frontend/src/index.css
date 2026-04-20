@@ -2,23 +2,20 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Mobile-first base styles */
+/* Dark nature theme with green accents */
 @layer base {
   html {
-    /* Prevent iOS Safari auto-zoom on input focus */
     font-size: 16px;
   }
 
   body {
-    /* Minimum font size to prevent iOS Safari auto-zoom */
     font-size: 16px;
-    /* Prevent horizontal scroll */
     overflow-x: hidden;
-    /* Full viewport height using dynamic viewport units */
     min-height: 100dvh;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+    color: #e2e8f0;
   }
 
-  /* Ensure all interactive elements meet minimum touch target size */
   button,
   a,
   input,
@@ -28,9 +25,59 @@
     min-width: 44px;
   }
 
-  /* Prevent horizontal overflow on all elements */
   * {
     max-width: 100%;
+  }
+}
+
+/* Custom nature-themed components */
+@layer components {
+  .nature-gradient {
+    background: linear-gradient(135deg, #065f46 0%, #10b981 50%, #059669 100%);
+  }
+  
+  .nature-gradient-soft {
+    background: linear-gradient(135deg, #064e3b 0%, #047857 50%, #065f46 100%);
+  }
+  
+  .glass-effect {
+    background: rgba(15, 23, 42, 0.8);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+  }
+  
+  .creature-card {
+    background: linear-gradient(145deg, #1e293b 0%, #334155 100%);
+    border: 2px solid rgba(16, 185, 129, 0.3);
+    box-shadow: 0 8px 32px rgba(16, 185, 129, 0.1);
+  }
+  
+  .speaking-animation {
+    animation: pulse-green 1.5s ease-in-out infinite;
+  }
+  
+  @keyframes pulse-green {
+    0%, 100% {
+      box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+    }
+    50% {
+      box-shadow: 0 0 0 20px rgba(16, 185, 129, 0);
+    }
+  }
+  
+  .camera-button {
+    background: linear-gradient(145deg, #10b981, #059669);
+    box-shadow: 0 8px 32px rgba(16, 185, 129, 0.3);
+    transition: all 0.3s ease;
+  }
+  
+  .camera-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(16, 185, 129, 0.4);
+  }
+  
+  .camera-button:active {
+    transform: translateY(0);
   }
 }
 
@@ -42,7 +89,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(0, 0, 0, 0.95);
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -50,11 +97,13 @@
     z-index: 9999;
     padding: 1rem;
     text-align: center;
+    color: #e2e8f0;
   }
 
   .orientation-guard-icon {
     font-size: 4rem;
     margin-bottom: 1rem;
+    color: #10b981;
     animation: rotate-pulse 2s ease-in-out infinite;
   }
 
@@ -68,7 +117,6 @@
   }
 }
 
-/* Hide orientation guard in portrait mode */
 @media (orientation: portrait) {
   .orientation-guard {
     display: none;
