@@ -34,6 +34,17 @@ This project was built for the **ElevenLabs x Kiro Hackathon** using:
 
 ## 🚀 Quick Start
 
+### 🎯 **INSTANT DEMO - NO SIGNUP REQUIRED!**
+
+1. **Visit**: https://whisperworld.onrender.com
+2. **Click**: "🚀 Try Demo (No signup needed!)" 
+3. **Take a photo** of any plant or animal
+4. **Chat with your creature!**
+
+**That's it!** No email, no password, no hassle. Perfect for hackathon judges and quick testing.
+
+---
+
 ### 1. Database Setup (Required First!)
 
 Go to your Supabase dashboard and run these SQL migrations in order:
@@ -68,7 +79,7 @@ VITE_API_BASE_URL=https://whisperworld-backend.onrender.com
 ### 3. Test the App!
 
 1. Visit https://whisperworld.onrender.com
-2. Sign up for an account
+2. Click "🚀 Try Demo" for instant access (no signup!)
 3. Take a photo of a plant or animal
 4. Chat with your creature!
 
