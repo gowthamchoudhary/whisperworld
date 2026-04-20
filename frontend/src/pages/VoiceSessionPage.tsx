@@ -104,7 +104,19 @@ export default function VoiceSessionPage(): JSX.Element {
     setError('');
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const demoMode = localStorage.getItem('demoMode');
+      let session;
+      
+      if (demoMode === 'true') {
+        // Use demo session
+        const demoUser = localStorage.getItem('demoUser');
+        session = demoUser ? { access_token: JSON.parse(demoUser).access_token } : null;
+      } else {
+        // Use real Supabase session
+        const { data } = await supabase.auth.getSession();
+        session = data.session;
+      }
+
       if (!session) {
         setError('Please sign in to continue.');
         return;
@@ -242,7 +254,19 @@ export default function VoiceSessionPage(): JSX.Element {
     setIsSinging(true);
     
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const demoMode = localStorage.getItem('demoMode');
+      let session;
+      
+      if (demoMode === 'true') {
+        // Use demo session
+        const demoUser = localStorage.getItem('demoUser');
+        session = demoUser ? { access_token: JSON.parse(demoUser).access_token } : null;
+      } else {
+        // Use real Supabase session
+        const { data } = await supabase.auth.getSession();
+        session = data.session;
+      }
+
       if (!session) {
         setError('Please sign in to continue.');
         return;

@@ -33,53 +33,15 @@ export default function SignIn(): JSX.Element {
     }
   };
 
-  const handleDemoLogin = async (): Promise<void> => {
-    setError('');
-    setLoading(true);
-
-    try {
-      // Try to sign in with demo account, create if doesn't exist
-      const demoEmail = 'demo@whisperworld.app';
-      const demoPassword = 'demo123456';
-
-      let { error: signInError } = await supabase.auth.signInWithPassword({
-        email: demoEmail,
-        password: demoPassword,
-      });
-
-      if (signInError && signInError.message.includes('Invalid login credentials')) {
-        // Demo account doesn't exist, create it
-        const { error: signUpError } = await supabase.auth.signUp({
-          email: demoEmail,
-          password: demoPassword,
-        });
-
-        if (signUpError) {
-          setError('Failed to create demo account. Please try manual sign up.');
-          return;
-        }
-
-        // Try signing in again
-        const { error: retrySignInError } = await supabase.auth.signInWithPassword({
-          email: demoEmail,
-          password: demoPassword,
-        });
-
-        if (retrySignInError) {
-          setError('Demo account created! Please try the demo button again.');
-          return;
-        }
-      } else if (signInError) {
-        setError(signInError.message);
-        return;
-      }
-
-      navigate('/app');
-    } catch (err) {
-      setError('Demo login failed. Please try manual sign up.');
-    } finally {
-      setLoading(false);
-    }
+  const handleDemoMode = (): void => {
+    // Set demo mode in localStorage and navigate directly
+    localStorage.setItem('demoMode', 'true');
+    localStorage.setItem('demoUser', JSON.stringify({
+      id: 'demo-user-123',
+      email: 'demo@whisperworld.app',
+      access_token: 'demo-token-123'
+    }));
+    navigate('/app');
   };
 
   return (
@@ -98,22 +60,13 @@ export default function SignIn(): JSX.Element {
           {/* Demo Button */}
           <div className="mb-6">
             <button
-              onClick={handleDemoLogin}
+              onClick={handleDemoMode}
               disabled={loading}
               className="w-full nature-gradient rounded-lg px-4 py-3 text-white font-medium hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-slate-900 disabled:opacity-50 transition-all duration-200 mb-4"
               style={{ minHeight: '44px' }}
             >
-              {loading ? (
-                <div className="flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                  Loading demo...
-                </div>
-              ) : (
-                <>
-                  <span className="text-lg mr-2">🚀</span>
-                  Try Demo (No signup needed!)
-                </>
-              )}
+              <span className="text-lg mr-2">🚀</span>
+              Try Demo (No signup needed!)
             </button>
             <p className="text-center text-xs text-slate-500">
               Instant access • No email required • Full features

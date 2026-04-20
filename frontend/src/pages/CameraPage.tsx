@@ -68,8 +68,20 @@ export default function CameraPage(): JSX.Element {
       const imageUrl = URL.createObjectURL(file);
       setCapturedImage(imageUrl);
 
-      // Get user session
-      const { data: { session } } = await supabase.auth.getSession();
+      // Get user session (demo or real)
+      const demoMode = localStorage.getItem('demoMode');
+      let session;
+      
+      if (demoMode === 'true') {
+        // Use demo session
+        const demoUser = localStorage.getItem('demoUser');
+        session = demoUser ? { access_token: JSON.parse(demoUser).access_token } : null;
+      } else {
+        // Use real Supabase session
+        const { data } = await supabase.auth.getSession();
+        session = data.session;
+      }
+
       if (!session) {
         setError('Please sign in to continue.');
         return;
@@ -141,7 +153,17 @@ export default function CameraPage(): JSX.Element {
   };
 
   const handleSignOut = async (): Promise<void> => {
-    await supabase.auth.signOut();
+    const demoMode = localStorage.getItem('demoMode');
+    
+    if (demoMode === 'true') {
+      // Clear demo mode
+      localStorage.removeItem('demoMode');
+      localStorage.removeItem('demoUser');
+    } else {
+      // Sign out from Supabase
+      await supabase.auth.signOut();
+    }
+    
     navigate('/');
   };
 
