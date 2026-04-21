@@ -162,6 +162,49 @@ async def get_or_create_profile(
     lat = gps.get("lat") if gps else None
     lng = gps.get("lng") if gps else None
 
+    # For anonymous users, skip database operations and generate fresh profiles
+    if user_id == "anonymous_user":
+        # Generate a fresh profile without database persistence
+        archetype_traits = ARCHETYPES.get(identification.category, ARCHETYPES["default"])
+        
+        # Generate personality via Groq
+        personality = await _generate_personality(
+            species=identification.species,
+            common_name=identification.common_name,
+            habitat=identification.habitat,
+            archetype_traits=archetype_traits,
+        )
+
+        # Create voice via ElevenLabs
+        voice_id = await _create_voice(
+            name=personality["name"],
+            speaking_style=personality["speakingStyle"],
+            traits=personality["traits"],
+        )
+
+        # Return profile without database persistence
+        now_iso = datetime.now(timezone.utc).isoformat()
+        location_dict: dict | None = None
+        if lat is not None and lng is not None:
+            location_dict = {"lat": lat, "lng": lng}
+
+        return CreatureProfile(
+            id=f"anon_{identification.species}_{hash(identification.species) % 10000}",
+            user_id=user_id,
+            species=identification.species,
+            common_name=identification.common_name,
+            category=identification.category,
+            name=personality["name"],
+            traits=personality["traits"],
+            backstory=personality["backstory"],
+            speaking_style=personality["speakingStyle"],
+            voice_id=voice_id,
+            location=location_dict,
+            created_at=now_iso,
+            last_seen_at=now_iso,
+        )
+
+    # Original database-based logic for authenticated users
     # Step 1: GPS proximity lookup
     existing_row: dict | None = await location_service.find_nearby_profile(
         user_id=user_id,
