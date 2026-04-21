@@ -8,6 +8,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.routers import ambient as ambient_router
+from app.routers import debug as debug_router
 from app.routers import identify as identify_router
 from app.routers import profile as profile_router
 from app.routers import session as session_router
@@ -32,6 +33,7 @@ app.add_middleware(
 
 
 app.include_router(ambient_router.router, prefix="/api")
+app.include_router(debug_router.router, prefix="/api")
 app.include_router(identify_router.router, prefix="/api")
 app.include_router(profile_router.router, prefix="/api")
 app.include_router(sing_router.router, prefix="/api")

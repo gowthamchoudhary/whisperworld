@@ -52,6 +52,17 @@ async def _generate_personality(
     archetype_traits: list[str],
 ) -> dict:
     """Call Groq to generate a creature personality."""
+    
+    # Check if Groq API key is available
+    if not GROQ_API_KEY:
+        logger.warning("GROQ_API_KEY not set, using fallback personality")
+        return {
+            "name": f"{common_name.title()} Friend",
+            "traits": archetype_traits,
+            "backstory": f"A friendly {common_name} who loves to chat about nature and life in the {habitat}.",
+            "speakingStyle": "friendly and curious"
+        }
+    
     client = Groq(api_key=GROQ_API_KEY)
 
     traits_str = ", ".join(archetype_traits)
@@ -108,6 +119,12 @@ async def _generate_personality(
 
 async def _create_voice(name: str, speaking_style: str, traits: list[str]) -> str:
     """Create an ElevenLabs voice via Voice Design API with retry logic."""
+    
+    # Check if ElevenLabs API key is available
+    if not ELEVENLABS_API_KEY:
+        logger.warning("ELEVENLABS_API_KEY not set, using default voice")
+        return DEFAULT_VOICE_ID
+    
     traits_str = ", ".join(traits)
     body = {
         "voice_description": f"{name} is a {speaking_style} creature with traits: {traits_str}",
