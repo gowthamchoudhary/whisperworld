@@ -12,6 +12,8 @@ async def debug_environment():
     return JSONResponse(content={
         "groq_api_key_set": bool(os.environ.get("GROQ_API_KEY")),
         "groq_api_key_length": len(os.environ.get("GROQ_API_KEY", "")),
+        "gemini_api_key_set": bool(os.environ.get("GEMINI_API_KEY")),
+        "gemini_api_key_length": len(os.environ.get("GEMINI_API_KEY", "")),
         "elevenlabs_api_key_set": bool(os.environ.get("ELEVENLABS_API_KEY")),
         "elevenlabs_api_key_length": len(os.environ.get("ELEVENLABS_API_KEY", "")),
         "supabase_url_set": bool(os.environ.get("SUPABASE_URL")),
