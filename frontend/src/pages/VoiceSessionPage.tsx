@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { supabase } from '../lib/supabaseClient';
 
 interface CreatureProfile {
   id: string;
@@ -67,7 +66,7 @@ export default function VoiceSessionPage(): JSX.Element {
     } | null;
 
     if (!state?.profile) {
-      navigate('/app');
+      navigate('/');
       return;
     }
 
@@ -112,33 +111,15 @@ export default function VoiceSessionPage(): JSX.Element {
     setError('');
 
     try {
-      const demoMode = localStorage.getItem('demoMode');
-      let session;
-      
-      if (demoMode === 'true') {
-        // Use demo session
-        const demoUser = localStorage.getItem('demoUser');
-        session = demoUser ? { access_token: JSON.parse(demoUser).access_token } : null;
-      } else {
-        // Use real Supabase session
-        const { data } = await supabase.auth.getSession();
-        session = data.session;
-      }
-
-      if (!session) {
-        setError('Please sign in to continue.');
-        return;
-      }
-
       // Initialize audio context
       if (!audioContextRef.current) {
         audioContextRef.current = new AudioContext();
       }
 
-      // Connect WebSocket with retry logic
+      // Connect WebSocket with retry logic (no auth needed)
       const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
       const wsUrl = BASE_URL.replace('https://', 'wss://').replace('http://', 'ws://');
-      const fullWsUrl = `${wsUrl}/ws/session?profileId=${profile.id}&token=${session.access_token}`;
+      const fullWsUrl = `${wsUrl}/ws/session?profileId=${profile.id}`;
       
       let lastError: Error | null = null;
       
@@ -299,25 +280,7 @@ export default function VoiceSessionPage(): JSX.Element {
     setIsSinging(true);
     
     try {
-      const demoMode = localStorage.getItem('demoMode');
-      let session;
-      
-      if (demoMode === 'true') {
-        // Use demo session
-        const demoUser = localStorage.getItem('demoUser');
-        session = demoUser ? { access_token: JSON.parse(demoUser).access_token } : null;
-      } else {
-        // Use real Supabase session
-        const { data } = await supabase.auth.getSession();
-        session = data.session;
-      }
-
-      if (!session) {
-        setError('Please sign in to continue.');
-        return;
-      }
-
-      // Call sing API with retry logic
+      // Call sing API with retry logic (no auth needed)
       const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
       let lastError: Error | null = null;
       
@@ -327,7 +290,6 @@ export default function VoiceSessionPage(): JSX.Element {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${session.access_token}`,
             },
             body: JSON.stringify({ profileId: profile.id }),
           });
