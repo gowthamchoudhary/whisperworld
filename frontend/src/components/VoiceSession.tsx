@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from 'react';
-import { supabase } from '../lib/supabaseClient';
 
 interface CreatureProfile {
   id: string;
@@ -32,33 +31,15 @@ export default function VoiceSession({ profile, onSessionEnd }: VoiceSessionProp
     setError('');
 
     try {
-      // Get session (demo or real)
-      const demoMode = localStorage.getItem('demoMode');
-      let session;
-      
-      if (demoMode === 'true') {
-        // Use demo session
-        const demoUser = localStorage.getItem('demoUser');
-        session = demoUser ? { access_token: JSON.parse(demoUser).access_token } : null;
-      } else {
-        // Use real Supabase session
-        const { data } = await supabase.auth.getSession();
-        session = data.session;
-      }
-
-      if (!session) {
-        throw new Error('Not authenticated');
-      }
-
       // Initialize AudioContext
       if (!audioContextRef.current) {
         audioContextRef.current = new AudioContext();
       }
 
-      // Connect WebSocket with retry logic
+      // Connect WebSocket with retry logic (no auth needed)
       const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
       const wsUrl = BASE_URL.replace('https://', 'wss://').replace('http://', 'ws://');
-      const fullWsUrl = `${wsUrl}/ws/session?profileId=${profile.id}&token=${session.access_token}`;
+      const fullWsUrl = `${wsUrl}/ws/session?profileId=${profile.id}`;
       
       const ws = new WebSocket(fullWsUrl);
       wsRef.current = ws;

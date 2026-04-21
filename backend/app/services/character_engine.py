@@ -3,14 +3,13 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-import re
 from datetime import datetime, timezone
 
-import google.generativeai as genai
 import httpx
+from groq import Groq
 from pydantic import BaseModel
 
-from app.core.config import ELEVENLABS_API_KEY, GEMINI_API_KEY
+from app.core.config import ELEVENLABS_API_KEY, GROQ_API_KEY
 from app.db.supabase_client import supabase_client
 from app.services import location_service
 from app.services.vision_engine import IdentificationResult
@@ -52,9 +51,8 @@ async def _generate_personality(
     habitat: str,
     archetype_traits: list[str],
 ) -> dict:
-    """Call Gemini to generate a creature personality."""
-    genai.configure(api_key=GEMINI_API_KEY)
-    model = genai.GenerativeModel("gemini-1.5-flash")
+    """Call Groq to generate a creature personality."""
+    client = Groq(api_key=GROQ_API_KEY)
 
     traits_str = ", ".join(archetype_traits)
     prompt = (
@@ -62,18 +60,50 @@ async def _generate_personality(
         f"Species: {species} ({common_name})\n"
         f"Habitat: {habitat}\n"
         f"Personality archetype traits: {traits_str}\n\n"
-        f"Generate a unique creature personality. Return ONLY a JSON object — no markdown, no extra text — with exactly these fields:\n"
-        f"  name          (string)           — a whimsical creature name\n"
-        f"  traits        (list of 3 strings) — personality traits inspired by the archetype\n"
-        f"  backstory     (string)            — a backstory in 100 words or fewer\n"
-        f"  speakingStyle (string)            — a short description of how this creature speaks\n"
+        f"Generate a unique creature personality. Return ONLY a JSON object with exactly these fields:\n"
+        f"- name (string): a whimsical creature name\n"
+        f"- traits (array of 3 strings): personality traits inspired by the archetype\n"
+        f"- backstory (string): a backstory in 100 words or fewer\n"
+        f"- speakingStyle (string): a short description of how this creature speaks\n"
     )
 
-    response = await asyncio.to_thread(model.generate_content, prompt)
-    text = response.text.strip()
-    text = re.sub(r"^```(?:json)?\s*", "", text)
-    text = re.sub(r"\s*```$", "", text)
-    return json.loads(text)
+    # Call Groq with retry logic
+    backoff_seconds = [1, 2, 4]
+    last_exc: Exception | None = None
+    
+    for attempt in range(1, 4):
+        try:
+            response = await asyncio.to_thread(
+                client.chat.completions.create,
+                model="llama-3.3-70b-versatile",
+                messages=[{"role": "user", "content": prompt}],
+                response_format={"type": "json_object"},
+                max_tokens=500,
+                temperature=0.7
+            )
+            
+            content = response.choices[0].message.content
+            if not content:
+                raise ValueError("Empty response from Groq")
+            
+            return json.loads(content)
+            
+        except Exception as exc:
+            last_exc = exc
+            logger.warning("Groq personality generation attempt %d failed: %s", attempt, exc)
+            if attempt < 3:
+                await asyncio.sleep(backoff_seconds[attempt - 1])
+                continue
+            break
+    
+    # Fallback to default personality
+    logger.error("Groq personality generation failed after 3 attempts: %s", last_exc)
+    return {
+        "name": f"{common_name.title()} Friend",
+        "traits": archetype_traits,
+        "backstory": f"A friendly {common_name} who loves to chat about nature and life in the {habitat}.",
+        "speakingStyle": "friendly and curious"
+    }
 
 
 async def _create_voice(name: str, speaking_style: str, traits: list[str]) -> str:
@@ -150,7 +180,7 @@ async def get_or_create_profile(
     # Step 4: Get archetype traits
     archetype_traits = ARCHETYPES.get(identification.category, ARCHETYPES["default"])
 
-    # Step 5: Generate personality via Gemini
+    # Step 5: Generate personality via Groq
     personality = await _generate_personality(
         species=identification.species,
         common_name=identification.common_name,

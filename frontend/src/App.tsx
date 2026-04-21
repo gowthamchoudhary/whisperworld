@@ -1,16 +1,11 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import SignIn from './pages/SignIn';
-import SignUp from './pages/SignUp';
 import CameraPage from './pages/CameraPage';
 import CreaturePage from './pages/CreaturePage';
 import VoiceSessionPage from './pages/VoiceSessionPage';
-import AuthGuard from './components/AuthGuard';
-import OrientationGuard from './components/OrientationGuard';
 
 function App(): JSX.Element {
   return (
     <BrowserRouter>
-      <OrientationGuard />
       {/* Mobile-first single-column layout: max-width 480px, centered */}
       <div
         style={{
@@ -24,57 +19,13 @@ function App(): JSX.Element {
         }}
       >
         <Routes>
-          <Route path="/" element={<SignIn />} />
-          <Route path="/signin" element={<SignIn />} />
-          <Route path="/signup" element={<SignUp />} />
-          <Route 
-            path="/app" 
-            element={
-              <AuthGuard>
-                <CameraPage />
-              </AuthGuard>
-            } 
-          />
-          <Route 
-            path="/creature/:id" 
-            element={
-              <AuthGuard>
-                <CreaturePage />
-              </AuthGuard>
-            } 
-          />
-          <Route 
-            path="/creature" 
-            element={
-              <AuthGuard>
-                <CreaturePage />
-              </AuthGuard>
-            } 
-          />
-          <Route 
-            path="/session/:id" 
-            element={
-              <AuthGuard>
-                <VoiceSessionPage />
-              </AuthGuard>
-            } 
-          />
-          <Route 
-            path="/voice-session" 
-            element={
-              <AuthGuard>
-                <VoiceSessionPage />
-              </AuthGuard>
-            } 
-          />
-          <Route 
-            path="/sing/:id" 
-            element={
-              <AuthGuard>
-                <VoiceSessionPage />
-              </AuthGuard>
-            } 
-          />
+          <Route path="/" element={<CameraPage />} />
+          <Route path="/camera" element={<CameraPage />} />
+          <Route path="/creature/:id" element={<CreaturePage />} />
+          <Route path="/creature" element={<CreaturePage />} />
+          <Route path="/session/:id" element={<VoiceSessionPage />} />
+          <Route path="/voice-session" element={<VoiceSessionPage />} />
+          <Route path="/sing/:id" element={<VoiceSessionPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>

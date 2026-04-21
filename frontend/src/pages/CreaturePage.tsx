@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { supabase } from '../lib/supabaseClient';
 
 interface IdentificationResult {
   species: string;
@@ -66,7 +65,7 @@ export default function CreaturePage(): JSX.Element {
     } | null;
 
     if (!state?.creatures) {
-      navigate('/app');
+      navigate('/');
       return;
     }
 
@@ -84,35 +83,17 @@ export default function CreaturePage(): JSX.Element {
     setError('');
 
     try {
-      const demoMode = localStorage.getItem('demoMode');
-      let session;
-      
-      if (demoMode === 'true') {
-        // Use demo session
-        const demoUser = localStorage.getItem('demoUser');
-        session = demoUser ? { access_token: JSON.parse(demoUser).access_token } : null;
-      } else {
-        // Use real Supabase session
-        const { data } = await supabase.auth.getSession();
-        session = data.session;
-      }
-
-      if (!session) {
-        setError('Please sign in to continue.');
-        return;
-      }
-
       const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
       const generatedProfiles: CreatureProfile[] = [];
 
       for (const creature of identifiedCreatures) {
         try {
           const requestBody: any = {
-            identificationResult: creature,
+            identification_result: creature,
           };
 
           if (gps) {
-            requestBody.gps = gps;
+            requestBody.gps = { lat: gps.latitude, lng: gps.longitude };
           }
 
           // Retry logic for profile generation
@@ -124,7 +105,6 @@ export default function CreaturePage(): JSX.Element {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${session.access_token}`,
                 },
                 body: JSON.stringify(requestBody),
               });
@@ -193,7 +173,7 @@ export default function CreaturePage(): JSX.Element {
   };
 
   const handleBackToCamera = (): void => {
-    navigate('/app');
+    navigate('/');
   };
 
   if (loading) {

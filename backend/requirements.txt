@@ -4,7 +4,7 @@ python-dotenv
 supabase
 httpx
 websockets
-google-generativeai
+groq
 pydantic
 elevenlabs
 python-multipart

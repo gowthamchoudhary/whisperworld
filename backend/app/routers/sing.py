@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 
-from fastapi import APIRouter, Header, HTTPException
+from fastapi import APIRouter, HTTPException
 from fastapi.responses import Response
 from pydantic import BaseModel
 
@@ -20,31 +20,11 @@ class SingRequest(BaseModel):
     profile_id: str
 
 
-async def _validate_jwt(authorization: str | None) -> str:
-    """Validate Bearer JWT via Supabase; return user_id or raise 401."""
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Missing or invalid Authorization header.")
-    token = authorization.removeprefix("Bearer ").strip()
-    try:
-        response = supabase_client.auth.get_user(token)
-        if response is None or response.user is None:
-            raise HTTPException(status_code=401, detail="Invalid or expired token.")
-        return response.user.id
-    except HTTPException:
-        raise
-    except Exception as exc:
-        logger.warning("JWT validation error: %s", exc)
-        raise HTTPException(status_code=401, detail="Invalid or expired token.") from exc
-
-
 @router.post("/sing")
 async def sing(
     body: SingRequest,
-    authorization: str | None = Header(default=None),
 ) -> Response:
     try:
-        await _validate_jwt(authorization)
-
         result = (
             supabase_client.table("creature_profiles")
             .select("*")

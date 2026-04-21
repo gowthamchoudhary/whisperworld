@@ -1,5 +1,4 @@
 import { useState, useRef, ChangeEvent } from 'react';
-import { supabase } from '../lib/supabaseClient';
 
 interface IdentificationResult {
   species: string;
@@ -63,30 +62,12 @@ export default function CameraCapture({ onIdentificationComplete, onError }: Cam
       // Get GPS coordinates
       const gps = await getGPSCoordinates();
 
-      // Get session (demo or real)
-      const demoMode = localStorage.getItem('demoMode');
-      let session;
-      
-      if (demoMode === 'true') {
-        // Use demo session
-        const demoUser = localStorage.getItem('demoUser');
-        session = demoUser ? { access_token: JSON.parse(demoUser).access_token } : null;
-      } else {
-        // Use real Supabase session
-        const { data } = await supabase.auth.getSession();
-        session = data.session;
-      }
-
-      if (!session) {
-        throw new Error('Not authenticated');
-      }
-
       // Build FormData
       const formData = new FormData();
-      formData.append('image', file);
+      formData.append('file', file); // Fixed: changed from 'image' to 'file'
       if (gps) {
-        formData.append('latitude', gps.lat.toString());
-        formData.append('longitude', gps.lng.toString());
+        formData.append('lat', gps.lat.toString());
+        formData.append('lng', gps.lng.toString());
       }
 
       // POST to backend with retry logic
@@ -97,10 +78,7 @@ export default function CameraCapture({ onIdentificationComplete, onError }: Cam
         try {
           const response = await fetch(`${BASE_URL}/api/identify`, {
             method: 'POST',
-            headers: {
-              Authorization: `Bearer ${session.access_token}`,
-            },
-            body: formData,
+            body: formData, // No auth headers needed
           });
 
           if (!response.ok) {
