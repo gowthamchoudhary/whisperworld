@@ -25,6 +25,12 @@ class SongGenerationError(Exception):
 
 async def _get_lyrics_from_convai(profile: CreatureProfile) -> str:
     """Open a short-lived ElevenLabs ConvAI WebSocket and request song lyrics in-character."""
+    
+    # Check if ElevenLabs API key is available
+    if not ELEVENLABS_API_KEY:
+        # Return fallback lyrics when API key is missing
+        return f"🎵 I am {profile.name}, living free,\nIn nature's embrace, wild and carefree!\nSinging my song for all to hear,\nBringing joy and nature near! 🎵"
+    
     system_prompt = build_system_prompt(profile)
     url = f"{ELEVENLABS_CONVAI_URL}?agent_id={profile.voice_id}"
     headers = {"xi-api-key": ELEVENLABS_API_KEY}
@@ -74,13 +80,20 @@ async def _get_lyrics_from_convai(profile: CreatureProfile) -> str:
             if attempt < 3:
                 await asyncio.sleep(backoff_seconds[attempt - 1])
 
-    raise SongGenerationError(
-        f"Failed to get lyrics from ConvAI after 3 attempts: {last_exc}"
-    )
+    # Fallback lyrics when ConvAI fails
+    logger.error("ConvAI failed after 3 attempts, using fallback lyrics: %s", last_exc)
+    return f"🎵 I am {profile.name}, living free,\nIn nature's embrace, wild and carefree!\nSinging my song for all to hear,\nBringing joy and nature near! 🎵"
 
 
 async def _text_to_speech(lyrics: str, voice_id: str) -> bytes:
     """Convert lyric text to audio bytes via ElevenLabs TTS v3."""
+    
+    # Check if ElevenLabs API key is available
+    if not ELEVENLABS_API_KEY:
+        # Return empty audio bytes when API key is missing
+        # This will cause the song generation to fail gracefully
+        raise SongGenerationError("ElevenLabs API key not configured")
+    
     url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
     headers = {"xi-api-key": ELEVENLABS_API_KEY, "Content-Type": "application/json"}
     body = {

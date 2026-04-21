@@ -6,12 +6,20 @@ import logging
 import httpx
 from fastapi import APIRouter
 from fastapi.responses import Response
+from pydantic import BaseModel
+
+from pydantic import BaseModel
 
 from app.core.config import ELEVENLABS_API_KEY
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+
+class AmbientRequest(BaseModel):
+    category: str
+
 
 AMBIENT_PROMPTS: dict[str, str] = {
     "flower":   "gentle garden breeze with bees and birdsong",
@@ -48,6 +56,28 @@ async def _fetch_ambient_audio(prompt: str) -> bytes:
     raise RuntimeError(f"ElevenLabs Sound Effects failed after 3 attempts: {last_exc}")
 
 
+@router.post("/ambient")
+async def create_ambient_sound(body: AmbientRequest) -> Response:
+    """Return ambient background audio for the given creature category.
+
+    Returns 200 with audio/mpeg on success, or 204 (no content) on failure
+    so the frontend can proceed silently without blocking the voice session.
+    """
+    prompt = AMBIENT_PROMPTS.get(body.category, AMBIENT_PROMPTS["default"])
+    
+    # Check if ElevenLabs API key is available
+    if not ELEVENLABS_API_KEY:
+        logger.warning("ELEVENLABS_API_KEY not set, skipping ambient sound generation")
+        return Response(status_code=204)
+    
+    try:
+        audio_bytes = await _fetch_ambient_audio(prompt)
+        return Response(content=audio_bytes, media_type="audio/mpeg")
+    except Exception as exc:
+        logger.error("Ambient sound generation failed for category=%s: %s", body.category, exc)
+        return Response(status_code=204)
+
+
 @router.get("/ambient")
 async def get_ambient_sound(category: str = "default") -> Response:
     """Return ambient background audio for the given creature category.
@@ -56,6 +86,12 @@ async def get_ambient_sound(category: str = "default") -> Response:
     so the frontend can proceed silently without blocking the voice session.
     """
     prompt = AMBIENT_PROMPTS.get(category, AMBIENT_PROMPTS["default"])
+    
+    # Check if ElevenLabs API key is available
+    if not ELEVENLABS_API_KEY:
+        logger.warning("ELEVENLABS_API_KEY not set, skipping ambient sound generation")
+        return Response(status_code=204)
+    
     try:
         audio_bytes = await _fetch_ambient_audio(prompt)
         return Response(content=audio_bytes, media_type="audio/mpeg")
